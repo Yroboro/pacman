@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pacman Game</title>
+    <!-- Подключение библиотеки web3.js для взаимодействия с блокчейном Artela -->
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.3.0/dist/web3.min.js"></script>
+</head>
+<body>
+    <h1>Pacman Game</h1>
+    <p>Score: <span id="score">0</span></p>
+    <canvas id="pacmanCanvas" width="300" height="300" style="border:1px solid #000;"></canvas>
+    <button onclick="movePacman('UP')">Move Up</button>
+    <button onclick="movePacman('DOWN')">Move Down</button>
+    <button onclick="movePacman('LEFT')">Move Left</button>
+    <button onclick="movePacman('RIGHT')">Move Right</button>
+
+    <script>
+        // Подключение к сети блокчейна Artela
+        const web3 = new Web3('https://artela.example.com'); // Замените на реальный адрес Artela
+
+        // Адрес вашего смарт-контракта
+        const contractAddress = '0x123456789abcdefABCDEF123456789abcdef1234'; // Замените на реальный адрес
+
+        // Аби-интерфейс вашего смарт-контракта
+        const contractAbi = [
+            // Здесь должны быть функции вашего смарт-контракта
+        ];
+
+        // Создание экземпляра смарт-контракта
+        const pacmanContract = new web3.eth.Contract(contractAbi, contractAddress);
+
+        // Получение элементов HTML
+        const scoreElement = document.getElementById('score');
+        const canvas = document.getElementById('pacmanCanvas');
+        const context = canvas.getContext('2d');
+
+        // Функция для обновления интерфейса
+        async function updateUI() {
+            // Получение данных из смарт-контракта
+            const score = await pacmanContract.methods.score().call();
+            const pacmanPosition = await pacmanContract.methods.pacman().call();
+
+            // Обновление элементов интерфейса
+            scoreElement.textContent = score;
+
+            // Отрисовка Пакмана на холсте (пример)
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle = 'yellow';
+            context.beginPath();
+            context.arc(pacmanPosition.x, pacmanPosition.y, 20, 0.2 * Math.PI, 1.8 * Math.PI);
+            context.lineTo(pacmanPosition.x, pacmanPosition.y);
+            context.fill();
+            context.closePath();
+        }
+
+        // Функция для отправки транзакции на блокчейн Artela
+        async function sendTransaction(method, params) {
+            const accounts = await web3.eth.getAccounts();
+            const gas = await method.estimateGas({ from: accounts[0], gas: 2000000 });
+
+            // Отправка транзакции
+            const result = await method.send({ from: accounts[0], gas: gas });
+
+            // Обновление интерфейса после транзакции
+            updateUI();
+        }
+
+        // Функции для управления Пакманом
+        async function movePacman(direction) {
+            const movePacmanMethod = pacmanContract.methods.movePacman(direction);
+            await sendTransaction(movePacmanMethod);
+        }
+
+        // Инициализация интерфейса
+        updateUI();
+    </script>
+</body>
+</html>
